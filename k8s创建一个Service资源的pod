@@ -1,0 +1,30 @@
+Service 创建service资源来允许pod能被外界访问
+VIP(Cluster-IP） 10.254.0.0/16 虚拟固定IP，负载均衡默认rr轮询
+宕掉的pod cluster-ip会自动剔除掉，把新的pod加进负载
+Service自动关联metadata的pod
+
+vim nginx-svc.yml
+apiVersion: v1                版本号
+kind: Service                 资源类型
+metadata:                     名称
+  name: myweb
+spec:                         详细信息
+  type: NodePort              类型：NodePort 端口映射的形式
+  ports:                      详细端口
+    - port: 80                VIP端口  （Cluster-IP）
+      nodePort: 30000         宿主机的端口
+      targetPort: 80          负载均衡（Pod端口）
+  selector:                   选择器
+    app: myweb                app：标签
+
+
+kubectl create -f nginx-svc.yml    创建svc
+kubectl get all -o wide            查看所有资源
+kubectl get svc                    查看svc状态
+kubectl describe svc myweb         查看svc的详细信息
+对service.yml文件做了修改后更新（不会杀死pod）
+kubectl apply -f nginx-svc.yml     更新nginx-svc.yml   把nodePort端口修改成10000
+kubectl delete svc myweb           删除svc资源
+
+
+RC的高可用，service被外部访问

@@ -1,0 +1,64 @@
+kubeadm init \
+--apiserver-advertise-address=192.168.133.101 \
+--service-cidr=10.1.0.0/16 \
+--pod-network-cidr=10.244.0.0/16 \
+--ignore-preflight-errors=all
+
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  
+kubeadm join 192.168.133.101:6443 --token 9kfdw7.jhhsiz0plb5zefpu \
+--discovery-token-ca-cert-hash sha256:5171472e6857a4ae3021eb9ef5bb3a82cf9387b4aca7ad7495568412b7ae996e
+
+
+
+
+kubectl get pods --all-namespaces 查看所有namespaces的pod资源
+
+kubectl --namespace kube-system delete pod kubernetes-dashboard-67c859fbd4-2s45w
+删除命名空间中的某个pod
+
+
+查看访问Dashboard的认证令牌
+kubectl create serviceaccount  dashboard-admin -n kubernetes-dashboard
+
+kubectl create clusterrolebinding  dashboard-admin --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:dashboard-admin
+
+kubectl describe secrets -n kubernetes-dashboard $(kubectl -n kubernetes-dashboard get secret | awk '/dashboard-admin/{print $1}')
+
+token: eyJhbGciOiJSUzI1NiIsImtpZCI6InlPV0p1dHBiOFlQRURkdzgyUHR2ckdGUHNWdnI2Q0ZXR3dPaXBYRkFjMEUifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlcm5ldGVzLWRhc2hib2FyZCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkYXNoYm9hcmQtYWRtaW4tdG9rZW4tYmJ2bWciLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGFzaGJvYXJkLWFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNGFkY2MwNGMtMTFmMi00YmExLTk3ZWQtZTAyZTQ1MTQxNzllIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmVybmV0ZXMtZGFzaGJvYXJkOmRhc2hib2FyZC1hZG1pbiJ9.anIkVzc2tKlOTCOrZSkFManJ5o2s61e3iF3ESG3D-FKGJmKvOzldB0hveRnRxYgA_76RZkSF_4LJUULsGwzqV82Gy2wBXLzMwEqTUxRyZ72sJ_0JN1fcby_hCl8aQMo8_CKmwbOOLPIQ9sXGEm-9P0kLjKpgLFBRKIQ1Y-Mo5efGFEYETqhggz4uwt1t1V_VJ83D6gkMtLOIxsG8wFoMjnyLd1yg5EvxfRirSUpqzY1LuG6a5qO3DBewjqjU7QelfemzbkKPCtw9U2UhXTzWiuPBu5r_gA9wCbF2W3-J-AQR8ikz4Xhx2ZzcKQhNJMx_ggG9TZ9LjHoh_3RrxbfiOg
+
+
+
+如何从集群中移除Node
+在master节点上执行：
+#先查看下node情况
+kubectl get node
+#查看下pod情况
+kubectl get pods -o wide
+#封锁node（设置为不可调度），排干node上的pod（drain命令已经会自动把node设置为不可调度，所以可以省略执行cordon命令）
+kubectl drain node-2
+#此时node状态如下
+kubectl get nodes
+node-2   Ready,SchedulingDisabled
+#然后删除slave3节点
+kubectl delete node node-2
+#查看node已经没有node-2了
+kubectl get nodes
+#原来在node-2上的pod已经调度到node-1
+kubectl get pods -o wide
+
+重新使node加入集群
+初始化机器, 安装网络与master一致, 安装kubeadm,kubelet,kubectl,版本号与master一致,安装docker
+添加防火墙桥接
+cat > /etc/sysctl.d/k8s.conf << EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+kubeadm join 192.168.133.101:6443 --token 9kfdw7.jhhsiz0plb5zefpu \
+--discovery-token-ca-cert-hash sha256:5171472e6857a4ae3021eb9ef5bb3a82cf9387b4aca7ad7495568412b7ae996e
+
+#在mastr查看token
+kubeadm token list

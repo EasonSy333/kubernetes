@@ -1,0 +1,26 @@
+https://www.qstack.com.cn/dashnoard.zip
+dashboard-deploy.yaml
+dashboard-svc.yaml
+
+dashboard，安装部署
+kubectl create -f dashboard-deploy.yaml
+kubectl create -f dashboard-svc.yaml
+
+kubectl get all --namespace=名称空间     查看某个名称空间的所有资源信息
+
+kubectl get all --all-namespaces         查看所有名称空间
+
+kubectl delete namespace 名称空间        删除名称空间下所有资源
+
+kubectl get pods --all-namespaces     查看所有namespaces的pod资源
+
+
+                    (名称空间)             (pod名称)
+kubectl --namespace kube-system delete pod kubernetes-dashboard-67c859fbd4-2s45w
+删除命名空间中的某个pod
+
+kubectl edit namespace jenkins
+
+
+kubectl delete namespace jenkins(删除jenkins名称空间,以及所有pod)
+

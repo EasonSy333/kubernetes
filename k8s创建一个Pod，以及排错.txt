@@ -1,0 +1,49 @@
+k8s创建一个Pod
+
+vim nginx_pod.yml                           k8s_pod.yml文件书写格式    
+apiVersion: v1                              apiVersion: 
+kind: Pod                                   kind: 
+metadata:                                   metadata: 
+  name: nginx                               spec: 
+  labels:                                   status: 
+    app: web                                
+spec:                                       可通过查看层级关系书写格式
+  containers:                               kubectl explain pod.spec.containers
+    - name: nginx                                    
+       image: nginx:1.13                             
+       ports:                                        
+         - containerPort: 80
+
+
+[root@ansible pod]# kubectl create -f nginx_pod.yml 
+Error from server (ServerTimeout): error when creating "nginx_pod.yml": No API token found for service account "default", retry after the token is automatically created and added to the service account
+
+master上
+vim /etc/kubernetes/apiserver
+去掉 serviceaccount
+
+kubectl describe pod nginx   查看pod的详细信息以及错误信息
+
+{kubelet k8s-node1}		Warning	FailedSync	Error syncing pod, skipping: failed to "StartContainer" for "POD" with ErrImagePull: "image pull failed for registry.access.redhat.com/rhel7/pod-infrastructure:latest, this may be because there are no credentials on this request.  details: (open /etc/docker/certs.d/registry.access.redhat.com/redhat-ca.crt: no such file or directory)"
+
+vim /etc/kubernetes/kubelet
+KUBELET_POD_INFRA_CONTAINER="--pod-infra-container-image=registry.access.redhat.com/rhel7/pod-infrastructure:latest" 
+                                                         此镜像地址错误，docker search pod-infrastructure 查看正确的地址替换，systemctl restart kubelet.service
+													 
+
+pod常用操作
+kubectl get all -o wide               查看所有资源
+kubectl create -f nginx_k8s.yml       创建一个pod资源
+kubectl get pods nginx -o wide        指定查看某个pod资源列表
+kubectl describe pod busybox          指定查看某个pod的详细信息
+kubectl delete pod busybox            指定删除某个pod
+kubectl delete pod busybox --force --grace-period=0   强制删除某个pod
+kubectl apply -f nginx_k8s.yml        通过配置文件更新pod
+kubectl edit pod nginx                修改pod资源的状态
+--------------------------------------------------------------------------
+kubectl get pods --all-namespaces     查看所有namespaces的pod资源
+
+kubectl --namespace kube-system delete pod kubernetes-dashboard-67c859fbd4-2s45w
+删除命名空间中的某个pod
+
+kubectl edit namespace jenkins

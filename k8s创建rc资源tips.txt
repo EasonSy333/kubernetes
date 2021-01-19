@@ -1,0 +1,44 @@
+Replication Controller
+RC一直监控Pod资源，一旦Pod资源有异常，会在其他的node节点重新启动一个新的Pod
+保证容器Pod的高可用，还提供滚动升级，回滚
+
+vim nginx-rc.yml
+apiVersion: v1                          版本号
+kind: ReplicationController             资源类型
+metadata:                               名称  rc通过名称来管理pod
+  name: myweb
+spec:                                   详细信息
+  replicas: 2                           Pod数量
+  selector:                             选择器
+    app: myweb
+  template:                             Pod的启动模板
+    metadata:                           名称（Pod名称不能一样）
+      labels:                           标签选择器（Pod名称myweb-随机）
+        app: myweb                      标签（Pod名称myweb-随机）
+    spec:
+      containers:
+        - name: myweb
+          image: nginx:1.13
+          ports:
+          - containerPort: 80
+		  
+kubectl create -f  nginx-rc.yml
+kubectl get all -o wide            查看所有资源
+kubectl get rc                     查看rx状态
+kubectl describe rc myweb          查看rc详细信息
+kubectl delete pod myweb-jvswk     删除一个pod会马上启动一个新的pod，因为定义了（replicas: 2）Pod数量大于也会自动删除
+
+kubectl scale rc myweb --replicas=3    给rc增加一个pod
+
+kubectl delete rc myweb            删除rc资源
+
+升级
+kubectl rolling-update myweb -f nginx-rc2.yml --update-period=30s    把myweb升级成myweb2，指定pod升级间隔为30秒  nginx-rc2.yml文件的metadata的name改成myweb2 
+回滚（反向升级到上一个版本）
+kubectl rolling-update myweb2 -f nginx-rc.yml --update-period=1s   把myweb2回滚到myweb，指定pod回滚间隔1秒  nginx-rc2.yml文件的metadata的name改成myweb 
+
+发现升级有问题，及时停止Ctrl+c，然后再恢复到上一个版本
+kubectl rolling-update myweb -f nginx-rc2.yml --update-period=50s    Ctrl+c
+恢复到上个版本myweb
+kubectl rolling-update myweb  myweb2 --rollback
+
